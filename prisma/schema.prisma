@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id            String @id
+  email         String @unique
+  firstName     String?
+  lastName      String?
+
+  memberships   Membership[]
+  documents     Document[]
+  generations   AIGeneration[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Organisation {
+  id            String @id
+  name          String
+
+  memberships   Membership[]
+  documents     Document[]
+  usageMetrics  UsageMetric[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Membership {
+  id              String @id @default(cuid())
+
+  userId          String
+  organisationId  String
+  role            String
+
+  user            User @relation(fields: [userId], references: [id])
+  organisation    Organisation @relation(fields: [organisationId], references: [id])
+
+  @@unique([userId, organisationId])
+}
+
+model Document {
+  id            String @id @default(cuid())
+
+  orgId         String
+  authorId      String
+
+  title         String
+  content       String
+  wordCount     Int
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organisation  Organisation @relation(fields: [orgId], references: [id])
+  author        User @relation(fields: [authorId], references: [id])
+
+  generations   AIGeneration[]
+}
+
+model AIGeneration {
+  id            String @id @default(cuid())
+
+  documentId    String
+  userId        String
+
+  prompt        String
+  completion    String
+
+  tokens        Int
+  model         String
+
+  createdAt     DateTime @default(now())
+
+  document      Document @relation(fields: [documentId], references: [id])
+  user          User @relation(fields: [userId], references: [id])
+}
+
+model UsageMetric {
+  id                String @id @default(cuid())
+
+  orgId             String
+  month             String
+
+  aiGenerations     Int @default(0)
+  documentsCreated  Int @default(0)
+  storageBytes      BigInt @default(0)
+
+  organisation      Organisation @relation(fields: [orgId], references: [id])
+}
