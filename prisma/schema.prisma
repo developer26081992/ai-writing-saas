@@ -7,7 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
 
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  UNPAID
+}
 
 model User {
   id            String @id
@@ -24,15 +37,18 @@ model User {
 }
 
 model Organisation {
-  id            String @id
-  name          String
+  id              String @id
+  name            String
 
-  memberships   Membership[]
-  documents     Document[]
-  usageMetrics  UsageMetric[]
+  plan            Plan @default(FREE)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  memberships     Membership[]
+  documents       Document[]
+  usageMetrics    UsageMetric[]
+  subscription    Subscription?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Membership {
@@ -49,40 +65,52 @@ model Membership {
 }
 
 model Document {
-  id            String @id @default(cuid())
+  id              String @id @default(cuid())
 
-  orgId         String
-  authorId      String
+  orgId           String
+  authorId        String
 
-  title         String
-  content       String
-  wordCount     Int
+  title           String
+  content         String @default("")
+  wordCount       Int @default(0)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  // Used as the collaboration room identifier
+  collaborationRoomId String @unique
 
-  organisation  Organisation @relation(fields: [orgId], references: [id])
-  author        User @relation(fields: [authorId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  generations   AIGeneration[]
+  organisation    Organisation @relation(fields: [orgId], references: [id])
+  author          User @relation(fields: [authorId], references: [id])
+
+  generations     AIGeneration[]
 }
 
 model AIGeneration {
-  id            String @id @default(cuid())
+  id              String @id @default(cuid())
 
-  documentId    String
-  userId        String
+  documentId      String
+  userId          String
 
-  prompt        String
-  completion    String
+  prompt          String
+  completion      String
 
-  tokens        Int
-  model         String
+  // Total tokens for this generation
+  tokens          Int @default(0)
 
-  createdAt     DateTime @default(now())
+  // More detailed usage tracking
+  inputTokens     Int @default(0)
+  outputTokens    Int @default(0)
 
-  document      Document @relation(fields: [documentId], references: [id])
-  user          User @relation(fields: [userId], references: [id])
+  model           String
+
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id])
+  user            User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([documentId, createdAt])
 }
 
 model UsageMetric {
@@ -96,4 +124,29 @@ model UsageMetric {
   storageBytes      BigInt @default(0)
 
   organisation      Organisation @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, month])
+}
+
+model Subscription {
+  id                    String @id @default(cuid())
+
+  organisationId        String @unique
+
+  stripeCustomerId      String @unique
+  stripeSubscriptionId  String? @unique
+
+  status                SubscriptionStatus
+  plan                  Plan
+
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean @default(false)
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organisation           Organisation @relation(fields: [organisationId], references: [id])
+
+  @@index([stripeCustomerId])
 }
