@@ -16,6 +16,7 @@
     "@hocuspocus/server": "^4.7.0",
     "@prisma/client": "^6.19.3",
     "@sentry/nextjs": "^10.74.0",
+    "@stripe/stripe-js": "^9.16.0",
     "@tiptap/extension-collaboration": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
@@ -29,6 +30,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "stripe": "^22.6.2",
     "yjs": "^13.6.32",
     "zod": "^4.6.5"
   },
