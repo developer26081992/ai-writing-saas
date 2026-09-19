@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -23,7 +24,10 @@ export default function AIAssistant({ onInsert }: AIAssistantProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          documentId: "cmu84qut00003phgoxbgl3lw0",
+        }),
       });
 
       if (!res.ok) {
@@ -44,10 +48,11 @@ export default function AIAssistant({ onInsert }: AIAssistantProps) {
       while (true) {
         const { done, value } = await reader.read();
 
-        if (done) break;
+        if (done) {
+          break;
+        }
 
         const chunk = decoder.decode(value);
-
         setResponse((current) => current + chunk);
       }
     } catch (error) {
@@ -95,3 +100,4 @@ export default function AIAssistant({ onInsert }: AIAssistantProps) {
     </aside>
   );
 }
+
